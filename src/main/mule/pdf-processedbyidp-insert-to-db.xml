@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:email="http://www.mulesoft.org/schema/mule/email" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd">
+	<email:imap-config name="Email_IMAP" doc:name="Email IMAP" doc:id="2d3c0c46-c334-450a-95a3-53b3759f5301" >
+		<email:imap-connection host="imap.gmail.com" user="saisriaripirala837@gmail.com" password="rawvalncdqtiurzs" timeoutUnit="MINUTES">
+			<email:properties >
+				<email:property key="mail.imap.starttls.enable" value="true"/>
+				<email:property key="mail.imap.starttls.required" value="true"/>
+				<email:property key="mail.imap.auth" value="true"/>
+				<email:property key="mail.imap.ssl.trust" value="*"/>
+				<email:property key="mail.imap.ssl.enable" value="true"/>
+			</email:properties>
+		</email:imap-connection>
+	</email:imap-config>
+	<file:config name="File_Config" doc:name="File Config" doc:id="ca261dca-933f-41e1-aaa3-c4dce5bb8fef" />
+	<email:smtp-config name="Email_SMTP" doc:name="Email SMTP" doc:id="b2b638d6-788a-468e-b24d-128662cf9634" >
+		<email:smtp-connection host="smtp.gmail.com" user="saisriaripirala837@gmail.com" password="rawvalncdqtiurzs">
+			<email:properties >
+				<email:property key="mail.smtp.auth" value="true" />
+				<email:property key="mail.smtp.starttls.enable" value="true" />
+				<email:property key="mail.smtp.starttls.required" value="true" />
+				<email:property key="mail.smtp.ssl.trust" value="*" />
+			</email:properties>
+		</email:smtp-connection>
+	</email:smtp-config>
+	<flow name="pdf-processedbyidp-insert-to-dbFlow" doc:id="5f01a6d3-16c3-4bcd-bd09-477b3e6cad74" >
+		<email:listener-imap doc:name="on-new-email-imap" doc:id="3339251a-9bc1-47c5-9c00-b3f527c13c61" config-ref="Email_IMAP">
+			<scheduling-strategy >
+				<fixed-frequency />
+			</scheduling-strategy>
+		</email:listener-imap>
+		<logger level="INFO" doc:name="logger" doc:id="15512ce3-17fc-4427-97ea-7165c2d6248e" message="Logger Message after on new email connector"/>
+		<set-variable value="#[payload.attachments]" doc:name="size-of-attachments" doc:id="c3e7bea1-bfee-461c-b5bd-c94dd733c886" variableName="attachmentsSize"/>
+		<choice doc:name="Choice" doc:id="4a76f353-d205-4661-9274-766a8390392a" >
+			<when expression="#[vars.attachmentsSize != {} and sizeOf(vars.attachmentsSize) &gt; 0]">
+				<foreach doc:name="For Each" doc:id="5782a7b2-65bb-46a9-ba72-88de078fcdbf" >
+					<logger level="INFO" doc:name="logger" doc:id="616aff3e-8b4e-48bd-ba43-276f0c29f7a5" message="Logger Message from when block"/>
+				</foreach>
+			</when>
+			<otherwise >
+				<email:send doc:name="sending-email-if-zero-attachments" doc:id="5eb102f8-0534-49ec-b59e-3a1d10e10ae8" config-ref="Email_SMTP" fromAddress="ss9831406@gmail.com" subject="Giving Information about attachments ">
+					<email:to-addresses >
+						<email:to-address value="saisriaripirala837@gmail.com" />
+					</email:to-addresses>
+					<email:body contentType="text/plain" >
+						<email:content ><![CDATA[#["Hi, We received your email but attachments are not found in the email kindly ensure that while sending!!!"]]]></email:content>
+					</email:body>
+				</email:send>
+				<logger level="INFO" doc:name="after-email-logger" doc:id="f2f07e9b-0b78-4a4a-97b6-7454d7991441" message="Logger Message from default block"/>
+			</otherwise>
+		</choice>
+	</flow>
+</mule>
